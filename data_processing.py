@@ -6,7 +6,7 @@ def process_sign_language_MNIST_dataset():
 def process_massey_gesture_dataset():
     pass
 
-def process_fingerspelling_A_datatset():
+def process_fingerspelling_A_dataset():
     pass
 
 if __name__ == "__main__":
