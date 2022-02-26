@@ -44,8 +44,34 @@ def process_sign_language_MNIST_dataset(filename):
 
     return resizedData, data_labels
 
-def process_massey_gesture_dataset():
-    pass
+def process_massey_gesture_dataset(path_to_files):
+    #files = ["/Users/kinakim/Desktop/massey/1", "/Users/kinakim/Desktop/massey/2", "/Users/kinakim/Desktop/massey/3", "/Users/kinakim/Desktop/massey/4", "/Users/kinakim/Desktop/massey/5"]
+    ret_data = [] 
+    ret_label = []
+
+    for list_of_files in os.listdir(path_to_files): 
+        filepath = path_to_files+'/'+list_of_files
+        if os.path.isdir(filepath):
+            os.chdir(filepath)
+            for image in os.listdir(filepath):
+                img = cv2.imread(image)
+                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                resized = cv2.resize(gray, (50,50))
+                ret_data.append(resized)
+                ret_label.append(image)
+    
+    # Plot first 24 resized images
+    col, ax = plt.subplots(4,6) 
+    col.set_size_inches(10, 10)
+    idx = 0
+    for i in range(4):
+        for j in range(6):
+            ax[i,j].imshow(ret_data[idx] , cmap = "gray")
+            idx += 1
+        plt.tight_layout()   
+    plt.show()
+
+    return ret_data, ret_label
 
 def process_fingerspelling_A_dataset(rootdir):
     """
@@ -88,5 +114,7 @@ def process_fingerspelling_A_dataset(rootdir):
     return data, labels
 
 if __name__ == "__main__":
-    # data_mnist, labels_mnist = process_sign_language_MNIST_dataset("sign_mnist_data.csv")
-    # data_fs, labels_fs = process_fingerspelling_A_dataset("datasets/fingerspelling")
+    data_mnist, labels_mnist = process_sign_language_MNIST_dataset("datasets/sign_mnist_data.csv")
+    data_fs, labels_fs = process_fingerspelling_A_dataset("datasets/fingerspelling")
+    data_massey, labels_massey = process_massey_gesture_dataset("datasets/massey") # path to massey directory. massey directory has subdir 1,2,3,4,5 
+
