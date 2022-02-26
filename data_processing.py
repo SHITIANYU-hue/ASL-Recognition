@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-import os 
+import os
 
 def process_sign_language_MNIST_dataset(filename):
     
@@ -73,9 +73,48 @@ def process_massey_gesture_dataset(path_to_files):
 
     return ret_data, ret_label
 
-def process_fingerspelling_A_dataset():
-    pass
+def process_fingerspelling_A_dataset(rootdir):
+    """
+    Link to dataset: https://empslocal.ex.ac.uk/people/staff/np331/index.php?section=FingerSpellingDataset
+
+    Args: 
+        rootdir(str) - path to the FingerSpelling parent folder
+
+    Returns: 
+        data (list)
+        labels (list) 
+    
+    """
+    data = []
+    labels = []
+
+    for subdir, dirs, files in os.walk(rootdir):
+        for file in files:
+            # Check if filename contains DS_Store (for MacOS) or depth (we don't want to keep depth images)
+            if "DS_Store" in file or "depth" in file:
+                continue
+            
+            # Store the image and the label
+            label = os.path.basename(os.path.normpath(subdir))
+
+            # Get the path of the image and read it
+            image_path = os.path.join(subdir, file)
+            image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE) # read as greyscale
+
+            # Resized the image as 50x50
+            resized_image = cv2.resize(image, (50,50), interpolation = cv2.INTER_CUBIC)
+            
+            data.append(resized_image)
+            labels.append(label)
+
+            # Show the images
+            # cv2.imshow('image', resized_image)
+            # cv2.waitKey(0) 
+
+    return data, labels
 
 if __name__ == "__main__":
-    data, labels = process_sign_language_MNIST_dataset("sign_mnist_data.csv")
-    data_massey, labels_massey = process_massey_gesture_dataset("./massey") # path to massey directory. massey directory has subdir 1,2,3,4,5 
+    data_mnist, labels_mnist = process_sign_language_MNIST_dataset("datasets/sign_mnist_data.csv")
+    data_fs, labels_fs = process_fingerspelling_A_dataset("datasets/fingerspelling")
+    data_massey, labels_massey = process_massey_gesture_dataset("datasets/massey") # path to massey directory. massey directory has subdir 1,2,3,4,5 
+
