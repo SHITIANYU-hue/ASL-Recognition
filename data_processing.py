@@ -4,26 +4,32 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import os
+from sklearn.model_selection import train_test_split
 
-def process_sign_language_MNIST_dataset(filename):
+def process_sign_language_MNIST_dataset(rootdir):
+    """
+    Link to dataset: https://www.kaggle.com/datamunge/sign-language-mnist
+
+    Args: 
+        rootdir(str) - path to the MNIST dataset parent folder
+
+    Returns: 
+        data (tensor)
+        labels (list) 
+    """
     
     # Parse data from csv file
-    data = pd.read_csv(filename)
+    data = pd.read_csv(rootdir)
     data_labels = data["label"]
     data = data.drop(["label"],axis=1)
     data = data.to_numpy()
     data = data.reshape(data.shape[0], 28,28,1).astype('float64')
 
-    # Plot first 24 images
-    col, ax = plt.subplots(4,6) 
-    col.set_size_inches(10, 10)
-    idx = 0
-    for i in range(4):
-        for j in range(6):
-            ax[i,j].imshow(data[idx] , cmap = "gray")
-            idx += 1
-        plt.tight_layout()   
-    plt.show()
+    # Reformat data labels to lower case letters
+    formatted_labels = []
+    letters = "abcdefghijklmnopqrstuvwxyz"
+    for label in data_labels.values.tolist():
+        formatted_labels.append(letters[label])
 
     # Resize data
     resizedData = []
@@ -31,34 +37,28 @@ def process_sign_language_MNIST_dataset(filename):
         resizedImg = cv2.resize(img, (50,50), interpolation = cv2.INTER_CUBIC)
         resizedData.append(resizedImg)
 
-    return resizedData, data_labels
+    return torch.tensor(np.array(resizedData)), formatted_labels
 
 def process_massey_gesture_dataset(path_to_files):
     ret_data = [] 
     ret_label = []
+    exclude = ['j','z','0','1','2','3','4','5','6','7','8','9']
 
     for subdir, dirs, files in os.walk(path_to_files):
         for file in files:
             if "DS_Store" in file:
                 continue
-            image = os.path.join(subdir, file)
+
+            image = os.path.join(subdir, file)           
+            if image.split('_')[1] in exclude: 
+                continue
+
             img = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
             resized = cv2.resize(img, (50,50))
             ret_data.append(resized)
-            ret_label.append(image)
-    
-    # Plot first 24 resized images
-    col, ax = plt.subplots(4,6) 
-    col.set_size_inches(10, 10)
-    idx = 0
-    for i in range(4):
-        for j in range(6):
-            ax[i,j].imshow(ret_data[idx] , cmap = "gray")
-            idx += 1
-        plt.tight_layout()   
-    plt.show()
+            ret_label.append(image.split('_')[1])
 
-    return ret_data, ret_label
+    return torch.tensor(np.array(ret_data)), ret_label
 
 def process_fingerspelling_A_dataset(rootdir):
     """
@@ -92,13 +92,60 @@ def process_fingerspelling_A_dataset(rootdir):
             resized_image = cv2.resize(image, (50,50), interpolation = cv2.INTER_CUBIC)
             
             data.append(resized_image)
-            labels.append(label)
+            labels.append(label) 
 
-            # Show the images
-            # cv2.imshow('image', resized_image)
-            # cv2.waitKey(0) 
+    return torch.tensor(np.array(data)), labels
 
-    return data, labels
+def one_hot_encoding(labels):
+    """
+    Performs one-hot-encoding on the labels
+
+    Args: 
+        labels (list) - dataset labels all in lowercase ie. ['a','b','c']
+
+    Returns: 
+        labels_encodings (tensor) - one-hot-encoding representation of the labels
+    """
+
+    # Dictionary that stores the letter to integer class conversion
+    letterClass = {'a':0, 'b':1, 'c':2, 'd':3, 'e':4, 'f':5, 'g':6, 'h':7, 'i':8,
+                    'k':9, 'l':10, 'm':11, 'n':12, 'o':13, 'p':14, 'q':15, 'r':16, 's':17,
+                    't':18, 'u':19, 'v':20, 'w':21, 'x':22, 'y':23}
+    
+    # Convert lowercase letters to numbers
+    labelsClass = []
+    for label in labels:
+        if label in letterClass:
+            labelsClass.append(letterClass[label])
+        else:
+            print("Incorrect label:", label)
+
+    # Get the one-hot-encodings for the labels
+    labels_encodings = torch.nn.functional.one_hot(torch.tensor(labelsClass), num_classes=24)
+    
+    return labels_encodings
+
+def combine_and_split_datasets(datasets, labels, split):
+    """
+    Combines the given list of datasets, shuffles the data, 
+    and splits the combined dataset according to the given split
+
+    Args:
+        datasets (list of tensors) - input of dataset
+        labels (list of tensors) - labels of dataset (in the same order as datasets)
+        split (list of floats) - desired [train, valid, test] split of the combined dataset
+                                    (train + valid + test must equal 1)
+    
+    Returns:
+        (X_train, y_train, X_valid, y_valid, X_test, y_test) - tuple of combined and split dataset
+    """
+    X = torch.cat((datasets), 0)
+    y = torch.cat((labels), 0)
+
+    X_train, X_rem, y_train, y_rem = train_test_split(X, y, test_size=split[1]+split[2])
+    X_valid, X_test, y_valid, y_test = train_test_split(X_rem, y_rem, test_size=split[2]/(split[1]+split[2]))
+
+    return X_train, y_train, X_valid, y_valid, X_test, y_test
 
 if __name__ == "__main__":
     print("Processing MNIST...")
@@ -113,3 +160,13 @@ if __name__ == "__main__":
     data_fs, labels_fs = process_fingerspelling_A_dataset("datasets/fingerspelling")
     print("Processing FingerSpelling done!")
 
+    # Apply one hot encoding to the labels
+    labels_mnist_encoded = one_hot_encoding(labels_mnist)
+    labels_massey_encoded = one_hot_encoding(labels_massey)
+    labels_fs_encoded = one_hot_encoding(labels_fs)
+
+    # Combine and split datasets
+    X_train, y_train, X_valid, y_valid, X_test, y_test = combine_and_split_datasets([data_mnist, data_massey, data_fs],
+                                                                                    [labels_mnist_encoded, labels_massey_encoded, labels_fs_encoded],
+                                                                                    [0.8, 0.1, 0.1])
+                                                                                    
