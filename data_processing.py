@@ -45,20 +45,22 @@ def process_sign_language_MNIST_dataset(filename):
     return resizedData, data_labels
 
 def process_massey_gesture_dataset(path_to_files):
-    #files = ["/Users/kinakim/Desktop/massey/1", "/Users/kinakim/Desktop/massey/2", "/Users/kinakim/Desktop/massey/3", "/Users/kinakim/Desktop/massey/4", "/Users/kinakim/Desktop/massey/5"]
     ret_data = [] 
     ret_label = []
+    exclude = ['j','z','0','1','2','3','4','5','6','7','8','9']
 
     for list_of_files in os.listdir(path_to_files): 
-        filepath = path_to_files+'/'+list_of_files
+        filepath = os.path.join(path_to_files, list_of_files)
         if os.path.isdir(filepath):
             os.chdir(filepath)
             for image in os.listdir(filepath):
+                if image.split('_')[1] in exclude: 
+                    continue
                 img = cv2.imread(image)
                 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
                 resized = cv2.resize(gray, (50,50))
                 ret_data.append(resized)
-                ret_label.append(image)
+                ret_label.append(image.split('_')[1])
     
     # Plot first 24 resized images
     col, ax = plt.subplots(4,6) 
