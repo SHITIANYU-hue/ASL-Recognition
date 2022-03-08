@@ -1,7 +1,6 @@
 import torch
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2
 import os
 from sklearn.model_selection import train_test_split
@@ -139,15 +138,15 @@ def combine_and_split_datasets(datasets, labels, split):
     Returns:
         (X_train, y_train, X_valid, y_valid, X_test, y_test) - tuple of combined and split dataset
     """
-    X = torch.cat((datasets), 0)
-    y = torch.cat((labels), 0)
+    X = torch.cat(datasets, 0)
+    y = torch.cat(labels, 0)
 
     X_train, X_rem, y_train, y_rem = train_test_split(X, y, test_size=split[1]+split[2])
     X_valid, X_test, y_valid, y_test = train_test_split(X_rem, y_rem, test_size=split[2]/(split[1]+split[2]))
 
     return X_train, y_train, X_valid, y_valid, X_test, y_test
 
-if __name__ == "__main__":
+def load_data():
     print("Processing MNIST...")
     data_mnist, labels_mnist = process_sign_language_MNIST_dataset("datasets/mnist/sign_mnist_data.csv")
     print("Processing MNIST done!")
@@ -169,4 +168,7 @@ if __name__ == "__main__":
     X_train, y_train, X_valid, y_valid, X_test, y_test = combine_and_split_datasets([data_mnist, data_massey, data_fs],
                                                                                     [labels_mnist_encoded, labels_massey_encoded, labels_fs_encoded],
                                                                                     [0.8, 0.1, 0.1])
-                                                                                    
+    return X_train, y_train, X_valid, y_valid, X_test, y_test
+
+if __name__ == "__main__":
+    pass
