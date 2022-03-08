@@ -92,11 +92,7 @@ def process_fingerspelling_A_dataset(rootdir):
             resized_image = cv2.resize(image, (50,50), interpolation = cv2.INTER_CUBIC)
             
             data.append(resized_image)
-            labels.append(label)
-
-            # Show the images
-            # cv2.imshow('image', resized_image)
-            # cv2.waitKey(0) 
+            labels.append(label) 
 
     return torch.tensor(np.array(data)), labels
 
@@ -173,3 +169,4 @@ if __name__ == "__main__":
     X_train, y_train, X_valid, y_valid, X_test, y_test = combine_and_split_datasets([data_mnist, data_massey, data_fs],
                                                                                     [labels_mnist_encoded, labels_massey_encoded, labels_fs_encoded],
                                                                                     [0.8, 0.1, 0.1])
+                                                                                    
