@@ -74,7 +74,7 @@ def process_massey_gesture_dataset(path_to_files):
         plt.tight_layout()   
     plt.show()
 
-    return ret_data, ret_label
+    return torch.tensor(np.array(ret_data)), ret_label
 
 def process_fingerspelling_A_dataset(rootdir):
     """
@@ -114,7 +114,7 @@ def process_fingerspelling_A_dataset(rootdir):
             # cv2.imshow('image', resized_image)
             # cv2.waitKey(0) 
 
-    return data, labels
+    return torch.tensor(np.array(data)), labels
 
 def one_hot_encoding(labels):
     """
@@ -145,6 +145,24 @@ def one_hot_encoding(labels):
     
     return labels_encodings
 
+def combine_and_split_datasets(datasets, labels, split):
+    """
+    Combines the given list of datasets, shuffles the data, 
+    and splits the combined dataset according to the given split
+
+    Args:
+        datasets (list of tensors) - input of dataset
+        labels (list of tensors) - labels of dataset (in the same order as datasets)
+        split (list of floats) - desired [train, valid, test] split of the combined dataset
+                                    (train + valid + test must equal 1)
+    
+    Returns:
+        (X_train, y_train, X_valid, y_valid, X_test, y_test) - tuple of combined and split dataset
+    """
+    X = torch.cat((datasets), 0)
+    y = torch.cat((labels), 0)
+
+
 if __name__ == "__main__":
     print("Processing MNIST...")
     data_mnist, labels_mnist = process_sign_language_MNIST_dataset("datasets/mnist/sign_mnist_data.csv")
@@ -158,3 +176,12 @@ if __name__ == "__main__":
     data_fs, labels_fs = process_fingerspelling_A_dataset("datasets/fingerspelling")
     print("Processing FingerSpelling done!")
 
+    # Apply one hot encoding to the labels
+    labels_mnist_encoded = one_hot_encoding(labels_mnist)
+    labels_massey_encoded = one_hot_encoding(labels_massey)
+    labels_fs_encoded = one_hot_encoding(labels_fs)
+
+    # Combine and split datasets
+    X_train, y_train, X_valid, y_valid, X_test, y_test = combine_and_split_datasets([data_mnist, data_massey, data_fs],
+                                                                                    [labels_mnist_encoded, labels_massey_encoded, labels_fs_encoded],
+                                                                                    [0.8, 0.1, 0.1])
