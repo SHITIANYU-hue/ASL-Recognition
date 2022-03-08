@@ -52,6 +52,7 @@ def process_sign_language_MNIST_dataset(rootdir):
 def process_massey_gesture_dataset(path_to_files):
     ret_data = [] 
     ret_label = []
+    exclude = ['j','z','0','1','2','3','4','5','6','7','8','9']
 
     for subdir, dirs, files in os.walk(path_to_files):
         for file in files:
