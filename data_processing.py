@@ -5,14 +5,36 @@ import matplotlib.pyplot as plt
 import cv2
 import os
 
-def process_sign_language_MNIST_dataset(filename):
+def process_sign_language_MNIST_dataset(rootdir):
+    """
+    Link to dataset: https://www.kaggle.com/datamunge/sign-language-mnist
+
+    Args: 
+        rootdir(str) - path to the MNIST dataset parent folder
+
+    Returns: 
+        data (tensor)
+        labels (list) 
+    """
     
     # Parse data from csv file
-    data = pd.read_csv(filename)
+    data = pd.read_csv(rootdir)
     data_labels = data["label"]
     data = data.drop(["label"],axis=1)
     data = data.to_numpy()
     data = data.reshape(data.shape[0], 28,28,1).astype('float64')
+
+    # Reformat data labels to lower case letters
+    formatted_labels = []
+    letters = "abcdefghijklmnopqrstuvwxyz"
+    for label in data_labels.values.tolist():
+        formatted_labels.append(letters[label])
+
+    # Resize data
+    resizedData = []
+    for img in data:
+        resizedImg = cv2.resize(img, (50,50), interpolation = cv2.INTER_CUBIC)
+        resizedData.append(resizedImg)
 
     # Plot first 24 images
     col, ax = plt.subplots(4,6) 
@@ -25,13 +47,7 @@ def process_sign_language_MNIST_dataset(filename):
         plt.tight_layout()   
     plt.show()
 
-    # Resize data
-    resizedData = []
-    for img in data:
-        resizedImg = cv2.resize(img, (50,50), interpolation = cv2.INTER_CUBIC)
-        resizedData.append(resizedImg)
-
-    return resizedData, data_labels
+    return torch.tensor(np.array(resizedData)), formatted_labels
 
 def process_massey_gesture_dataset(path_to_files):
     ret_data = [] 
@@ -99,6 +115,35 @@ def process_fingerspelling_A_dataset(rootdir):
             # cv2.waitKey(0) 
 
     return data, labels
+
+def one_hot_encoding(labels):
+    """
+    Performs one-hot-encoding on the labels
+
+    Args: 
+        labels (list) - dataset labels all in lowercase ie. ['a','b','c']
+
+    Returns: 
+        labels_encodings (tensor) - one-hot-encoding representation of the labels
+    """
+
+    # Dictionary that stores the letter to integer class conversion
+    letterClass = {'a':0, 'b':1, 'c':2, 'd':3, 'e':4, 'f':5, 'g':6, 'h':7, 'i':8,
+                    'k':9, 'l':10, 'm':11, 'n':12, 'o':13, 'p':14, 'q':15, 'r':16, 's':17,
+                    't':18, 'u':19, 'v':20, 'w':21, 'x':22, 'y':23}
+    
+    # Convert lowercase letters to numbers
+    labelsClass = []
+    for label in labels:
+        if label in letterClass:
+            labelsClass.append(letterClass[label])
+        else:
+            print("Incorrect label:", label)
+
+    # Get the one-hot-encodings for the labels
+    labels_encodings = torch.nn.functional.one_hot(torch.tensor(labelsClass), num_classes=24)
+    
+    return labels_encodings
 
 if __name__ == "__main__":
     print("Processing MNIST...")
