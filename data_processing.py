@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import os
+from sklearn.model_selection import train_test_split
 
 def process_sign_language_MNIST_dataset(rootdir):
     """
@@ -43,18 +44,19 @@ def process_massey_gesture_dataset(path_to_files):
     ret_label = []
     exclude = ['j','z','0','1','2','3','4','5','6','7','8','9']
 
-    for list_of_files in os.listdir(path_to_files): 
-        filepath = os.path.join(path_to_files, list_of_files)
-        if os.path.isdir(filepath):
-            os.chdir(filepath)
-            for image in os.listdir(filepath):
-                if image.split('_')[1] in exclude: 
-                    continue
-                img = cv2.imread(image)
-                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-                resized = cv2.resize(gray, (50,50))
-                ret_data.append(resized)
-                ret_label.append(image.split('_')[1])
+    for subdir, dirs, files in os.walk(path_to_files):
+        for file in files:
+            if "DS_Store" in file:
+                continue
+
+            image = os.path.join(subdir, file)           
+            if image.split('_')[1] in exclude: 
+                continue
+
+            img = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
+            resized = cv2.resize(img, (50,50))
+            ret_data.append(resized)
+            ret_label.append(image.split('_')[1])
 
     return torch.tensor(np.array(ret_data)), ret_label
 
@@ -144,6 +146,10 @@ def combine_and_split_datasets(datasets, labels, split):
     X = torch.cat((datasets), 0)
     y = torch.cat((labels), 0)
 
+    X_train, X_rem, y_train, y_rem = train_test_split(X, y, test_size=split[1]+split[2])
+    X_valid, X_test, y_valid, y_test = train_test_split(X_rem, y_rem, test_size=split[2]/(split[1]+split[2]))
+
+    return X_train, y_train, X_valid, y_valid, X_test, y_test
 
 if __name__ == "__main__":
     print("Processing MNIST...")
