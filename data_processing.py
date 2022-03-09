@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import cv2
 import os
+import pickle
 from sklearn.model_selection import train_test_split
 
 def process_sign_language_MNIST_dataset(rootdir):
@@ -22,7 +23,7 @@ def process_sign_language_MNIST_dataset(rootdir):
     data_labels = data["label"]
     data = data.drop(["label"],axis=1)
     data = data.to_numpy()
-    data = data.reshape(data.shape[0], 28,28,1).astype('float64')
+    data = data.reshape(data.shape[0], 28,28,1)
 
     # Reformat data labels to lower case letters
     formatted_labels = []
@@ -33,12 +34,25 @@ def process_sign_language_MNIST_dataset(rootdir):
     # Resize data
     resizedData = []
     for img in data:
-        resizedImg = cv2.resize(img, (50,50), interpolation = cv2.INTER_CUBIC)
+        img = np.float32(img)
+        resizedImg = cv2.resize(img, (224,224), interpolation = cv2.INTER_CUBIC)
+        resizedImg = cv2.cvtColor(resizedImg,cv2.COLOR_GRAY2RGB)
         resizedData.append(resizedImg)
 
     return torch.tensor(np.array(resizedData)), formatted_labels
 
 def process_massey_gesture_dataset(path_to_files):
+    """
+    Link to dataset: https://mro.massey.ac.nz/handle/10179/4514
+    
+    Args: 
+        rootdir(str) - path to the Massey parent folder
+
+    Returns: 
+        data (list)
+        labels (list) 
+    
+    """
     ret_data = [] 
     ret_label = []
     exclude = ['j','z','0','1','2','3','4','5','6','7','8','9']
@@ -52,8 +66,8 @@ def process_massey_gesture_dataset(path_to_files):
             if image.split('_')[1] in exclude: 
                 continue
 
-            img = cv2.imread(image, cv2.IMREAD_GRAYSCALE)
-            resized = cv2.resize(img, (50,50))
+            img = cv2.imread(image, cv2.IMREAD_COLOR)
+            resized = cv2.resize(img, (224, 224))
             ret_data.append(resized)
             ret_label.append(image.split('_')[1])
 
@@ -85,10 +99,10 @@ def process_fingerspelling_A_dataset(rootdir):
 
             # Get the path of the image and read it
             image_path = os.path.join(subdir, file)
-            image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE) # read as greyscale
+            image = cv2.imread(image_path, cv2.IMREAD_COLOR)
 
             # Resized the image as 50x50
-            resized_image = cv2.resize(image, (50,50), interpolation = cv2.INTER_CUBIC)
+            resized_image = cv2.resize(image, (224,224), interpolation = cv2.INTER_CUBIC)
             
             data.append(resized_image)
             labels.append(label) 
@@ -138,13 +152,28 @@ def combine_and_split_datasets(datasets, labels, split):
     Returns:
         (X_train, y_train, X_valid, y_valid, X_test, y_test) - tuple of combined and split dataset
     """
+    print("Combining datasets...")
     X = torch.cat(datasets, 0)
     y = torch.cat(labels, 0)
 
+    print("Performing train/valid/test split...")
     X_train, X_rem, y_train, y_rem = train_test_split(X, y, test_size=split[1]+split[2])
     X_valid, X_test, y_valid, y_test = train_test_split(X_rem, y_rem, test_size=split[2]/(split[1]+split[2]))
 
     return X_train, y_train, X_valid, y_valid, X_test, y_test
+
+def save_data_as_pickle(X_train, y_train, X_valid, y_valid, X_test, y_test, fname):
+    data = {"X_train": X_train, "y_train": y_train, "X_valid": X_valid, "y_valid": y_valid, "X_test": X_test, "y_test": y_test}
+    file = open(fname, "wb")
+    pickle.dump(data, file)
+    file.close()
+
+def load_data_from_pickle(fname):
+    file = open(fname, "rb")
+    data = pickle.load(file)
+    file.close()
+
+    return data
 
 def load_data():
     print("Processing MNIST...")
@@ -160,6 +189,7 @@ def load_data():
     print("Processing FingerSpelling done!")
 
     # Apply one hot encoding to the labels
+    print("Applying one-hot encoding to labels...")
     labels_mnist_encoded = one_hot_encoding(labels_mnist)
     labels_massey_encoded = one_hot_encoding(labels_massey)
     labels_fs_encoded = one_hot_encoding(labels_fs)
@@ -171,4 +201,5 @@ def load_data():
     return X_train, y_train, X_valid, y_valid, X_test, y_test
 
 if __name__ == "__main__":
-    pass
+    X_train, y_train, X_valid, y_valid, X_test, y_test = load_data()
+    save_data_as_pickle(X_train, y_train, X_valid, y_valid, X_test, y_test, "data.pkl")
