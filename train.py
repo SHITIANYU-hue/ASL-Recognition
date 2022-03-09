@@ -10,6 +10,7 @@ def set_requires_grad_false(model):
 
 if __name__ == "__main__":
     # Load Data
+    print("Loading dataset...")
     data = load_data_from_pickle("data.pkl")
     X_train = data["X_train"]
     y_train = data["y_train"]
@@ -30,6 +31,7 @@ if __name__ == "__main__":
     num_epochs = 10
     
     # Create GoogLeNet model
+    print("Loading GoogLeNet model...")
     model = models.googlenet(pretrained=True)
     print(model) 
     
@@ -55,6 +57,7 @@ if __name__ == "__main__":
     # valid_accuracies = []
 
     # Training loop
+    print("Starting training loop...")
     for epoch in range(num_epochs):
         optimizer.zero_grad()
 
