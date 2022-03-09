@@ -1,4 +1,4 @@
-from data_processing import load_data
+from data_processing import load_data_from_pickle
 import torchvision.models as models
 import torch
 # from torchsummary import summary 
@@ -9,9 +9,14 @@ def set_requires_grad_false(model):
         param.requires_grad = False
 
 if __name__ == "__main__":
-
     # Load Data
-    X_train, y_train, X_valid, y_valid, X_test, y_test = load_data()
+    data = load_data_from_pickle("data.pkl")
+    X_train = data["X_train"]
+    y_train = data["y_train"]
+    X_valid = data["X_valid"]
+    y_valid = data["y_valid"]
+    X_test = data["X_test"]
+    y_test = data["y_test"]
 
     # Change input data to conform to CNN input shape
     X_train = torch.permute(X_train, (0, 3, 1, 2))
