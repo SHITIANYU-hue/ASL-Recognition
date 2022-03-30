@@ -52,6 +52,9 @@ def train(model, X, y):
         train_losses.append(avg_train_loss/X_train.shape[0])
         # train_losses.append(100.0*train_loss.detach().numpy())
         print('Epoch %04d  Training Loss %.4f' % (epoch + 1, train_loss))   
+    
+    print('Saving model as "model.pt"...')
+    torch.save(model, "model.pt")
 
 if __name__ == "__main__":
     # Load Data
