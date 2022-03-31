@@ -46,15 +46,9 @@ def train(model, X_train, y_train, X_valid, y_valid):
             
             # Make prediction
             train_pred = model(X_batch)
-            print("train_pred (before):", train_pred)
-
-            train_pred = torch.nn.functional.one_hot(torch.argmax(train_pred, dim=1), num_classes=24)
-
             train_loss = loss(torch.squeeze(train_pred.type(torch.FloatTensor)), y_batch)
             avg_train_loss += train_loss * BATCH_SIZE
-            train_acc += (train_pred == y_batch).sum()
-            print("train_pred (after):", train_pred)
-            print("y_batch:", y_batch)
+            train_acc += (torch.nn.functional.one_hot(torch.argmax(train_pred, dim=1), num_classes=24) == y_batch).sum()
 
             optimizer.zero_grad()
             train_loss.backward()
@@ -70,10 +64,9 @@ def train(model, X_train, y_train, X_valid, y_valid):
             
             # Make prediction
             valid_pred =  model(X_batch)
-            valid_pred = torch.nn.functional.one_hot(torch.argmax(valid_pred, dim=1), num_classes=24).float()
             valid_loss = loss(torch.squeeze(valid_pred.type(torch.FloatTensor)), y_batch)
             avg_valid_loss += valid_loss * BATCH_SIZE
-            valid_acc += (valid_pred == y_batch).sum()
+            valid_acc += (torch.nn.functional.one_hot(torch.argmax(valid_pred, dim=1), num_classes=24) == y_batch).sum()
 
             optimizer.zero_grad()
             valid_loss.backward()
@@ -82,10 +75,7 @@ def train(model, X_train, y_train, X_valid, y_valid):
         valid_losses.append(avg_valid_loss/X_valid.shape[0])
         valid_accuracies.append(valid_acc/X_valid.shape[0])
 
-        # train_losses.append(100.0*train_loss.detach().numpy())
         print('Epoch %04d  Training Loss %.2f Validation Loss %.2f Training Accuracy %.2f Validation Accuracy %.2f' % (epoch + 1, avg_train_loss/X_train.shape[0], avg_valid_loss/X_valid.shape[0], 100*train_acc/X_train.shape[0], 100*valid_acc/X_valid.shape[0]))
-
-        # print('Epoch %04d  Training Loss %.4f' % (epoch + 1, train_loss))   
     
     #Plot training loss
     plt.title("Train vs Validation Loss")
@@ -107,13 +97,16 @@ def train(model, X_train, y_train, X_valid, y_valid):
     print('Saving model as "model.pt"...')
     torch.save(model, "model.pt")
 
+
 class ASLNet(torch.nn.Module):
     def __init__(self):
         super(ASLNet, self).__init__()
         self.model = models.googlenet(pretrained=True)
-        set_requires_grad_false(self.model)
-        self.model.fc = torch.nn.Linear(1024, 24)
 
+        set_requires_grad_false(self.model)
+
+        # Change last output layer to match output dimension and output a probablity distribution using softmax
+        self.model.fc = torch.nn.Linear(1024, 24) 
         self.softmax = torch.nn.Softmax()
 
     def forward(self, x):
@@ -150,24 +143,19 @@ if __name__ == "__main__":
 
     # Create GoogLeNet model
     print("Loading GoogLeNet model...")
-    # model = models.googlenet(pretrained=True)
     model = ASLNet()
     print("Model loaded!")
-    
-    # Change last output layer to match output dimension
-    # num_classes = 24
-    # model.fc = torch.nn.Linear(1024, num_classes)
 
     # Train the model
-    X_train = X_train[0:1000]
-    y_train = y_train[0:1000]
-    X_valid = X_valid[0:500]
-    y_valid = y_valid[0:500]
+    # X_train = X_train[0:1000]
+    # y_train = y_train[0:1000]
+    # X_valid = X_valid[0:500]
+    # y_valid = y_valid[0:500]
     train(model, X_train, y_train, X_valid, y_valid)
 
     # model = torch.load("results/model.pt")
 
     with torch.no_grad():
         y_predict = model(X_test)
-        accuracy=((y_predict == y_test).sum()) / (y_test.shape[0])
+        accuracy=((torch.nn.functional.one_hot(torch.argmax(y_predict, dim=1), num_classes=24) == y_test).sum()) / (y_test.shape[0])
         print(f"Test Accuracy: {accuracy.item(): .4f}")
