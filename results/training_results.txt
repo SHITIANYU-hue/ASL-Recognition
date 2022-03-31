@@ -1,0 +1,10 @@
+Epoch 0001  Training Loss 3.1747
+Epoch 0002  Training Loss 3.0982
+Epoch 0003  Training Loss 3.0632
+Epoch 0004  Training Loss 2.9982
+Epoch 0005  Training Loss 2.9486
+Epoch 0006  Training Loss 2.9127
+Epoch 0007  Training Loss 2.8709
+Epoch 0008  Training Loss 2.8118
+Epoch 0009  Training Loss 2.8010
+Epoch 0010  Training Loss 2.7359
