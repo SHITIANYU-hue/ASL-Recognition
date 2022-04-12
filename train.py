@@ -10,8 +10,8 @@ def set_requires_grad_false(model):
 def train(model, X_train, y_train, X_valid, y_valid):
     # Variables
     LEARNING_RATE = 0.001
-    EPOCHS = 10
-    BATCH_SIZE = 256
+    EPOCHS = 100
+    BATCH_SIZE = 32
     
     TRAIN_BATCHES = int(len(X_train) / BATCH_SIZE) 
     VALID_BATCHES = int(len(X_valid) / BATCH_SIZE)
@@ -31,6 +31,8 @@ def train(model, X_train, y_train, X_valid, y_valid):
     train_accuracies = []
     valid_losses = []
     valid_accuracies = []
+
+    file = open("results.txt", "w")
 
     # Training loop
     print("Starting training loop...")
@@ -54,8 +56,8 @@ def train(model, X_train, y_train, X_valid, y_valid):
             train_loss.backward()
             optimizer.step()
         
-        train_losses.append(avg_train_loss/X_train.shape[0])
-        train_accuracies.append(train_acc/X_train.shape[0])
+        train_losses.append(avg_train_loss.detach().numpy()/X_train.shape[0])
+        train_accuracies.append(train_acc.detach().numpy()/X_train.shape[0])
 
         # Repeat with validation set
         for batch in range(VALID_BATCHES):
@@ -72,30 +74,37 @@ def train(model, X_train, y_train, X_valid, y_valid):
             valid_loss.backward()
             optimizer.step()
 
-        valid_losses.append(avg_valid_loss/X_valid.shape[0])
-        valid_accuracies.append(valid_acc/X_valid.shape[0])
+        valid_losses.append(avg_valid_loss.detach().numpy()/X_valid.shape[0])
+        valid_accuracies.append(valid_acc.detach().numpy()/X_valid.shape[0])
 
-        print('Epoch %04d  Training Loss %.2f Validation Loss %.2f Training Accuracy %.2f Validation Accuracy %.2f' % (epoch + 1, avg_train_loss/X_train.shape[0], avg_valid_loss/X_valid.shape[0], 100*train_acc/X_train.shape[0], 100*valid_acc/X_valid.shape[0]))
-    
+        print('Epoch %04d  Training Loss %.4f Validation Loss %.4f Training Accuracy %.4f Validation Accuracy %.4f' % (epoch + 1, avg_train_loss/X_train.shape[0], avg_valid_loss/X_valid.shape[0], train_acc/X_train.shape[0], valid_acc/X_valid.shape[0]))
+        file.write('Epoch %04d  Training Loss %.4f Validation Loss %.4f Training Accuracy %.4f Validation Accuracy %.4f\n' % (epoch + 1, avg_train_loss/X_train.shape[0], avg_valid_loss/X_valid.shape[0], train_acc/X_train.shape[0], valid_acc/X_valid.shape[0]))
+
+    file.close()
+
+    print('Saving model as "model.pt"...')
+    torch.save(model, "model.pt")
+
     #Plot training loss
+    plt.figure()
     plt.title("Train vs Validation Loss")
     plt.plot(train_losses, label="Train")
     plt.plot(valid_losses, label="Validation")
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
     plt.legend(loc='best')
-    plt.show()
+    #plt.show()
+    plt.savefig('loss.png')
 
+    plt.figure()
     plt.title("Train vs Validation Accuracy")
     plt.plot(train_accuracies, label="Train")
     plt.plot(valid_accuracies, label="Validation")
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy (%)")
     plt.legend(loc='best')
-    plt.show()
-
-    print('Saving model as "model.pt"...')
-    torch.save(model, "model.pt")
+    #plt.show()
+    plt.savefig('accuracy.png')
 
 
 class ASLNet(torch.nn.Module):
@@ -118,7 +127,7 @@ class ASLNet(torch.nn.Module):
 if __name__ == "__main__":
     # Load Data
     print("Loading dataset...")
-    data = load_data_from_pickle("data.pkl")
+    data = load_data_from_pickle("data_small.pkl")
     X_train = data["X_train"]
     y_train = data["y_train"]
     X_valid = data["X_valid"]
