@@ -4,14 +4,38 @@ import torch
 import matplotlib.pyplot as plt
 
 def set_requires_grad_false(model):
+    """
+    Sets which model layers are retrained
+    """
+    
+    num_params = sum(p.numel() for p in model.parameters())
+    i = 0
     for param in model.parameters():
-        param.requires_grad = False
+        if i == num_params - 3:
+            break
+        param.requires_grad = False # Set layer to be non-trainable
+        i += 1
 
 def train(model, X_train, y_train, X_valid, y_valid):
-    # Variables
-    LEARNING_RATE = 0.001
-    EPOCHS = 100
-    BATCH_SIZE = 32
+    """
+    Function to train the model
+    """
+    
+    ## Hyperparameters ##
+    # Trial 1
+    # LEARNING_RATE = 0.001
+    # EPOCHS = 20
+    # BATCH_SIZE = 256
+
+    # Trial 2
+    # LEARNING_RATE = 0.001
+    # EPOCHS = 200
+    # BATCH_SIZE = 32
+
+    # Trial 3
+    LEARNING_RATE = 0.01
+    EPOCHS = 20
+    BATCH_SIZE = 4
     
     TRAIN_BATCHES = int(len(X_train) / BATCH_SIZE) 
     VALID_BATCHES = int(len(X_valid) / BATCH_SIZE)
@@ -85,7 +109,7 @@ def train(model, X_train, y_train, X_valid, y_valid):
     print('Saving model as "model.pt"...')
     torch.save(model, "model.pt")
 
-    #Plot training loss
+    #Plot loss
     plt.figure()
     plt.title("Train vs Validation Loss")
     plt.plot(train_losses, label="Train")
@@ -96,6 +120,7 @@ def train(model, X_train, y_train, X_valid, y_valid):
     #plt.show()
     plt.savefig('loss.png')
 
+    #Plot accuracy
     plt.figure()
     plt.title("Train vs Validation Accuracy")
     plt.plot(train_accuracies, label="Train")
@@ -108,6 +133,11 @@ def train(model, X_train, y_train, X_valid, y_valid):
 
 
 class ASLNet(torch.nn.Module):
+    """
+    GoogLeNet model definition with last output layer
+    changed to match the number of classes
+    """
+
     def __init__(self):
         super(ASLNet, self).__init__()
         self.model = models.googlenet(pretrained=True)
@@ -156,15 +186,11 @@ if __name__ == "__main__":
     print("Model loaded!")
 
     # Train the model
-    # X_train = X_train[0:1000]
-    # y_train = y_train[0:1000]
-    # X_valid = X_valid[0:500]
-    # y_valid = y_valid[0:500]
     train(model, X_train, y_train, X_valid, y_valid)
 
+    # Test Results
     # model = torch.load("results/model.pt")
-
-    with torch.no_grad():
-        y_predict = model(X_test)
-        accuracy=((torch.nn.functional.one_hot(torch.argmax(y_predict, dim=1), num_classes=24) == y_test).sum()) / (y_test.shape[0])
-        print(f"Test Accuracy: {accuracy.item(): .4f}")
+    # with torch.no_grad():
+    #     y_predict = model(X_test)
+    #     accuracy=((torch.nn.functional.one_hot(torch.argmax(y_predict, dim=1), num_classes=24) == y_test).sum()) / (y_test.shape[0])
+    #     print(f"Test Accuracy: {accuracy.item(): .4f}")
