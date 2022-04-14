@@ -14,7 +14,7 @@ This file processes each of the three datasets by resizing the images and conver
 ### Training Loop
 The training of the model is implemented and performed in `train.py`.
   
-The trainig loop currently uses minibatch gradient descent to optmize the weights of the model.
+The training loop currently uses minibatch gradient descent to optmize the weights of the model.
 
 ### Results
 The results of the first three trials can be seen in the `results_trial1`, `results_trial2`, and `results_trial3` directories.
