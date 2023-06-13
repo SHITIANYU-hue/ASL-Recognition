@@ -1,4 +1,4 @@
-# ECE324-ASL-Recognition
+# ASL-Recognition
 ### Downloading the Dataset
 The dataset for this project can be downloaded [here](https://drive.google.com/drive/folders/1kbBPhVgaCz-ZtiUsv3jkCS9KitTPcF7Y?usp=sharing).  
   
